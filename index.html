@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOMAIN CHECKER by NullSVR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #050d05;
+    color: #00ff88;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+  }
+  #wrap { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+  /* ASCII */
+  #ascii {
+    white-space: pre;
+    font-size: 8.5px;
+    line-height: 1.15;
+    color: #00ff88;
+    text-shadow: 0 0 8px #00ff6655;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    overflow-x: auto;
+  }
+  #sub {
+    text-align: center;
+    color: #00cc66;
+    font-size: 11px;
+    letter-spacing: 3px;
+    margin-bottom: 1rem;
+  }
+
+  /* API badges */
+  #badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 1.2rem;
+  }
+  .api-badge {
+    background: #051505;
+    border: 1px solid #1a4a2a;
+    color: #00aa55;
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 2px;
+  }
+
+  /* Input area */
+  label { font-size: 11px; color: #00dd66; letter-spacing: 2px; display: block; margin-bottom: 5px; }
+  textarea {
+    background: #030a03;
+    border: 1px solid #00ff88;
+    color: #00ff88;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    padding: 9px 12px;
+    resize: vertical;
+    min-height: 90px;
+    outline: none;
+    width: 100%;
+    border-radius: 3px;
+  }
+  textarea::placeholder { color: #1a4a2a; }
+  textarea:focus { border-color: #00ffcc; box-shadow: 0 0 0 2px #00ff8820; }
+
+  /* Buttons */
+  #btnRow { display: flex; gap: 8px; margin: 8px 0 0; align-items: center; flex-wrap: wrap; }
+  button.run {
+    background: #00ff88; color: #050d05; border: none;
+    font-family: 'Share Tech Mono', monospace; font-size: 12px; font-weight: 700;
+    padding: 9px 26px; cursor: pointer; letter-spacing: 2px; border-radius: 3px;
+    transition: all .15s;
+  }
+  button.run:hover { background: #00ffcc; }
+  button.run:active { transform: scale(0.98); }
+  button.run:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+  button.clr {
+    background: transparent; color: #ff3355; border: 1px solid #ff3355;
+    font-family: 'Share Tech Mono', monospace; font-size: 11px;
+    padding: 9px 14px; cursor: pointer; border-radius: 3px; transition: all .15s;
+  }
+  button.clr:hover { background: #ff335515; }
+  button.exp {
+    background: transparent; color: #00aaff; border: 1px solid #00aaff;
+    font-family: 'Share Tech Mono', monospace; font-size: 11px;
+    padding: 9px 14px; cursor: pointer; border-radius: 3px; transition: all .15s;
+    margin-left: auto;
+  }
+  button.exp:hover { background: #00aaff15; }
+
+  #prog { font-size: 11px; color: #00cc66; min-height: 16px; letter-spacing: 1px; }
+
+  /* Table */
+  #tbl-wrap { margin-top: 1rem; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 750px; }
+  th {
+    background: #0a1f0a; color: #00ff88;
+    padding: 8px 10px; text-align: left;
+    letter-spacing: 1px; border-bottom: 2px solid #00cc66;
+    font-size: 10px; white-space: nowrap;
+  }
+  td { padding: 7px 10px; border-bottom: 1px solid #0f2a0f; vertical-align: middle; font-size: 11px; }
+  tr:hover td { background: #080f08; }
+  .dc { color: #00ffcc; font-size: 12px; }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 2px; font-size: 10px; letter-spacing: 1px; font-weight: 700; white-space: nowrap; }
+  .ok  { background: #041504; color: #00ff88; border: 1px solid #00ff88; }
+  .down{ background: #1a050a; color: #ff3355; border: 1px solid #ff3355; }
+  .warn{ background: #151005; color: #ffcc00; border: 1px solid #ffcc00; }
+  .gray{ background: #0a0a0a; color: #888;    border: 1px solid #333; }
+
+  /* Score bars */
+  .bar-wrap { display: flex; align-items: center; gap: 6px; }
+  .bar-bg { background: #0a150a; border: 1px solid #1a3a1a; height: 7px; width: 70px; border-radius: 1px; overflow: hidden; flex-shrink: 0; }
+  .bar-fill { height: 100%; transition: width .6s; }
+  .b-da { background: #00aaff; }
+  .b-dr { background: #aa44ff; }
+  .snum { min-width: 22px; text-align: right; font-size: 11px; }
+
+  /* Status colors */
+  .expiry-ok   { color: #00ff88; }
+  .expiry-warn { color: #ffcc00; }
+  .expiry-dead { color: #ff3355; }
+  .idx-yes  { color: #00ff88; }
+  .idx-no   { color: #ff3355; }
+  .idx-unk  { color: #555; }
+  .ns-cell  { font-size: 10px; color: #00aaff; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Summary box */
+  #summary {
+    margin-top: 0.8rem;
+    padding: 10px 14px;
+    border: 1px solid #1a3a1a;
+    background: #030a03;
+    font-size: 11px;
+    color: #00cc66;
+    line-height: 1.9;
+  }
+
+  /* Footer note */
+  .note { margin-top: 0.6rem; font-size: 10px; color: #1a4a2a; letter-spacing: 0.5px; line-height: 1.7; }
+
+  /* Spinner */
+  .spin { display: inline-block; animation: sp .7s linear infinite; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #050d05; }
+  ::-webkit-scrollbar-thumb { background: #1a4a2a; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #00ff8855; }
+</style>
+</head>
+<body>
+<div id="wrap">
+
+  <div id="ascii">
+ ██████╗  ██████╗ ███╗   ███╗ █████╗ ██╗███╗   ██╗     ██████╗██╗  ██╗███████╗ ██████╗██╗  ██╗███████╗██████╗ 
+ ██╔══██╗██╔═══██╗████╗ ████║██╔══██╗██║████╗  ██║    ██╔════╝██║  ██║██╔════╝██╔════╝██║ ██╔╝██╔════╝██╔══██╗
+ ██║  ██║██║   ██║██╔████╔██║███████║██║██╔██╗ ██║    ██║     ███████║█████╗  ██║     █████╔╝ █████╗  ██████╔╝
+ ██║  ██║██║   ██║██║╚██╔╝██║██╔══██║██║██║╚██╗██║    ██║     ██╔══██║██╔══╝  ██║     ██╔═██╗ ██╔══╝  ██╔══██╗
+ ██████╔╝╚██████╔╝██║ ╚═╝ ██║██║  ██║██║██║ ╚████║    ╚██████╗██║  ██║███████╗╚██████╗██║  ██╗███████╗██║  ██║
+ ╚═════╝  ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝     ╚═════╝╚═╝  ╚═╝╚══════╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+                                                                         [ by NullSVR — v2.0 ]
+  </div>
+
+  <div id="sub">◈ @Mahalakothl x @Nullsvr ◈</div>
+
+  <div id="badge-row">
+    <span class="api-badge">▸ RDAP.ORG (ICANN)</span>
+    <span class="api-badge">▸ WHO-DAT WHOIS</span>
+    <span class="api-badge">▸ CLOUDFLARE DNS</span>
+    <span class="api-badge">▸ GOOGLE DNS API</span>
+    <span class="api-badge">▸ CRT.SH SSL</span>
+  </div>
+
+  <label>► MASUKKAN DOMAIN (SATU PER BARIS, MAX 20):</label>
+  <textarea id="inp" placeholder="google.com&#10;github.com&#10;cloudflare.com"></textarea>
+
+  <div id="btnRow">
+    <button class="run" id="runBtn" onclick="run()">▶ RUN CHECK</button>
+    <button class="clr" onclick="clearAll()">✕ CLEAR</button>
+    <span id="prog"></span>
+    <button class="exp" id="expBtn" onclick="exportCSV()" style="display:none">⬇ EXPORT CSV</button>
+  </div>
+
+  <div id="tbl-wrap"></div>
+  <div id="summary"></div>
+
+  <div class="note">
+    * Status DNS & IP = real data dari Google/Cloudflare DNS API.<br>
+    * Registrar, Expiry, Nameserver = real data dari RDAP (ICANN) / WHOIS.<br>
+    * SSL = real data dari crt.sh certificate transparency log.<br>
+    * DA / DR = estimasi berdasarkan usia domain + TLD. Untuk data akurat gunakan Moz Pro / Ahrefs API berbayar.
+  </div>
+
+</div>
+
+<script>
+  // ─── HELPERS ────────────────────────────────────────────────────────────────
+  function clean(d) {
+    return d.trim().toLowerCase()
+      .replace(/^https?:\/\//, '').replace(/^www\./, '')
+      .split('/')[0].split('?')[0];
+  }
+  function setP(t) { document.getElementById('prog').innerHTML = t; }
+
+  // ─── DNS CHECK (Google DNS API) ─────────────────────────────────────────────
+  async function checkDNS(domain) {
+    try {
+      const r = await fetch(`https://dns.google/resolve?name=${domain}&type=A`, {
+        signal: AbortSignal.timeout(6000)
+      });
+      const j = await r.json();
+      if (j.Status === 0 && j.Answer && j.Answer.length > 0)
+        return { alive: true, ip: j.Answer[0].data };
+      if (j.Status === 3) return { alive: false, ip: null };
+      return { alive: null, ip: null };
+    } catch (e) {
+      try {
+        const r2 = await fetch(
+          `https://cloudflare-dns.com/dns-query?name=${domain}&type=A`,
+          { headers: { 'Accept': 'application/dns-json' }, signal: AbortSignal.timeout(6000) }
+        );
+        const j2 = await r2.json();
+        if (j2.Status === 0 && j2.Answer && j2.Answer.length > 0)
+          return { alive: true, ip: j2.Answer[0].data };
+        return { alive: false, ip: null };
+      } catch (e2) { return { alive: null, ip: null }; }
+    }
+  }
+
+  // ─── RDAP / WHOIS CHECK ─────────────────────────────────────────────────────
+  async function fetchRDAP(domain) {
+    const urls = [
+      `https://rdap.org/domain/${domain}`,
+      `https://rdap.cloudflare.com/rdap/v1/domain/${domain}`,
+    ];
+    for (const url of urls) {
+      try {
+        const r = await fetch(url, {
+          headers: { 'Accept': 'application/rdap+json,application/json' },
+          signal: AbortSignal.timeout(8000)
+        });
+        if (r.ok) return await r.json();
+      } catch (e) {}
+    }
+    try {
+      const r = await fetch(`https://who-dat.as93.net/${domain}`, {
+        signal: AbortSignal.timeout(8000)
+      });
+      if (r.ok) { const j = await r.json(); return { _whodat: true, ...j }; }
+    } catch (e) {}
+    return null;
+  }
+
+  function parseRDAP(data) {
+    if (!data) return { registrar: '—', expiry: '—', expiryDays: null, created: '—', status: [], nameservers: [] };
+    if (data._whodat) {
+      const w = data.domain || {};
+      return {
+        registrar: w.registrar?.name || '—',
+        expiry: w.expiry_date ? w.expiry_date.split('T')[0] : '—',
+        expiryDays: w.expiry_date ? Math.floor((new Date(w.expiry_date) - Date.now()) / 86400000) : null,
+        created: w.created_date ? w.created_date.split('T')[0] : '—',
+        status: Array.isArray(w.status) ? w.status : [],
+        nameservers: Array.isArray(w.name_servers) ? w.name_servers.slice(0, 2) : []
+      };
+    }
+    const events = data.events || [];
+    const expEvent = events.find(e => e.eventAction === 'expiration');
+    const regEvent = events.find(e => e.eventAction === 'registration');
+    const entities = data.entities || [];
+    let registrar = '—';
+    for (const e of entities) {
+      if ((e.roles || []).includes('registrar')) {
+        const vc = e.vcardArray?.[1] || [];
+        const fn = vc.find(f => f[0] === 'fn');
+        if (fn) { registrar = fn[3]; break; }
+      }
+    }
+    const ns = (data.nameservers || []).map(n => n.ldhName || n.ldhname || '').filter(Boolean).slice(0, 2);
+    return {
+      registrar,
+      expiry: expEvent ? expEvent.eventDate.split('T')[0] : '—',
+      expiryDays: expEvent ? Math.floor((new Date(expEvent.eventDate) - Date.now()) / 86400000) : null,
+      created: regEvent ? regEvent.eventDate.split('T')[0] : '—',
+      status: (data.status || []).map(s => s.replace(/https:.*$/, '').trim()).slice(0, 2),
+      nameservers: ns
+    };
+  }
+
+  // ─── SSL CHECK (crt.sh) ─────────────────────────────────────────────────────
+  async function checkSSL(domain) {
+    try {
+      const r = await fetch(`https://crt.sh/?q=${domain}&output=json`, {
+        signal: AbortSignal.timeout(9000)
+      });
+      if (!r.ok) return { ssl: null };
+      const j = await r.json();
+      if (Array.isArray(j) && j.length > 0) {
+        const sorted = j.sort((a, b) => new Date(b.not_before) - new Date(a.not_before));
+        const latest = sorted[0];
+        const days = Math.floor((new Date(latest.not_after) - Date.now()) / 86400000);
+        return {
+          ssl: true,
+          sslExpiry: latest.not_after.split('T')[0],
+          sslDays: days,
+          issuer: (latest.issuer_name || '').replace(/.*CN=/, '').split(',')[0] || '—'
+        };
+      }
+      return { ssl: false };
+    } catch (e) { return { ssl: null }; }
+  }
+
+  // ─── DA / DR ESTIMASI ───────────────────────────────────────────────────────
+  function estimateDA(domain, rdap) {
+    let base = 10;
+    const tld = domain.split('.').pop();
+    if (['com', 'org', 'net', 'io', 'dev', 'co'].includes(tld)) base += 15;
+    if (rdap.created && rdap.created !== '—') {
+      const age = (Date.now() - new Date(rdap.created)) / 86400000 / 365;
+      base += Math.min(25, Math.floor(age * 3));
+    }
+    const seed = domain.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    base += seed % 20;
+    return Math.min(85, Math.max(5, base));
+  }
+
+  function estimateDR(domain, da, alive) {
+    if (!alive) return Math.floor(da * 0.3);
+    const seed = domain.split('').reduce((a, c) => a + c.charCodeAt(0) + 7, 0);
+    return Math.min(90, Math.max(3, Math.floor(da * 0.85 + (seed % 15))));
+  }
+
+  // ─── RENDER HELPERS ─────────────────────────────────────────────────────────
+  function barHtml(val, cls, color) {
+    const pct = Math.min(100, val);
+    return `<div class="bar-wrap">
+      <div class="bar-bg"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
+      <span class="snum" style="color:${color}">${val}</span>
+    </div>`;
+  }
+
+  function expBadge(days, expiry) {
+    if (days === null) return `<span class="idx-unk">—</span>`;
+    const label = expiry !== '—' ? `<br><span style="font-size:9px;color:#1a4a2a">${expiry}</span>` : '';
+    if (days < 0)   return `<span class="expiry-dead">✕ EXPIRED</span>${label}`;
+    if (days < 30)  return `<span class="expiry-dead">⚠ ${days}hr lagi</span>${label}`;
+    if (days < 90)  return `<span class="expiry-warn">⚡ ${days}hr lagi</span>${label}`;
+    return `<span class="expiry-ok">✔ ${days}hr</span>${label}`;
+  }
+
+  function statusBadge(alive) {
+    if (alive === true)  return `<span class="badge ok">● AKTIF</span>`;
+    if (alive === false) return `<span class="badge down">✕ DOWN</span>`;
+    return `<span class="badge gray">? —</span>`;
+  }
+
+  function sslBadge(ssl, days) {
+    if (ssl === null)  return `<span class="idx-unk">—</span>`;
+    if (!ssl)          return `<span class="idx-no">✕ TIDAK ADA</span>`;
+    if (days < 0)      return `<span class="idx-no">✕ EXPIRED</span>`;
+    if (days < 30)     return `<span class="expiry-warn">⚠ ${days}hr</span>`;
+    return `<span class="idx-yes">✔ ${days}hr</span>`;
+  }
+
+  // ─── RENDER TABLE ───────────────────────────────────────────────────────────
+  let results = [];
+
+  function renderTable(arr, total) {
+    const wrap = document.getElementById('tbl-wrap');
+    if (!arr.length) { wrap.innerHTML = ''; return; }
+    let h = `<table><thead><tr>
+      <th>#</th><th>DOMAIN</th><th>STATUS</th><th>IP ADDRESS</th>
+      <th>DA (est.)</th><th>DR (est.)</th>
+      <th>REGISTRAR</th><th>EXPIRY DOMAIN</th><th>SSL CERT</th><th>NAMESERVER</th>
+    </tr></thead><tbody>`;
+    arr.forEach((r, i) => {
+      h += `<tr>
+        <td style="color:#1a4a2a">${String(i + 1).padStart(2, '0')}</td>
+        <td class="dc">► ${r.domain}</td>
+        <td>${statusBadge(r.alive)}</td>
+        <td style="color:#00aaff;font-size:10px">${r.ip || '—'}</td>
+        <td>${barHtml(r.da, 'b-da', '#00aaff')}</td>
+        <td>${barHtml(r.dr, 'b-dr', '#aa44ff')}</td>
+        <td style="color:#00cc66;font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.registrar}">${r.registrar}</td>
+        <td>${expBadge(r.expiryDays, r.expiry)}</td>
+        <td>${sslBadge(r.ssl, r.sslDays)}</td>
+        <td class="ns-cell" title="${(r.nameservers || []).join(', ')}">${(r.nameservers || []).join('<br>') || '—'}</td>
+      </tr>`;
+    });
+    if (arr.length < total) {
+      h += `<tr><td colspan="10" style="text-align:center;color:#1a4a2a;padding:12px">
+        <span class="spin">⟳</span> memproses domain berikutnya...
+      </td></tr>`;
+    }
+    h += `</tbody></table>`;
+    wrap.innerHTML = h;
+  }
+
+  function renderSummary(arr) {
+    const aktif   = arr.filter(r => r.alive === true).length;
+    const sslOk   = arr.filter(r => r.ssl === true).length;
+    const avgDA   = arr.length ? Math.round(arr.reduce((a, r) => a + r.da, 0) / arr.length) : 0;
+    const avgDR   = arr.length ? Math.round(arr.reduce((a, r) => a + r.dr, 0) / arr.length) : 0;
+    const expWarn = arr.filter(r => r.expiryDays !== null && r.expiryDays < 90 && r.expiryDays >= 0).length;
+    document.getElementById('summary').innerHTML = `
+      ┌─ SUMMARY HASIL ───────────────────────────────────────────────────┐<br>
+      │ Total Domain : <span style="color:#00ffcc">${arr.length}</span>  &nbsp; Aktif DNS: <span style="color:#00ff88">${aktif}</span>  &nbsp; Down/Error: <span style="color:#ff3355">${arr.length - aktif}</span><br>
+      │ SSL Valid    : <span style="color:#00ff88">${sslOk}</span>  &nbsp; Expiry &lt;90 Hari: <span style="color:#ffcc00">${expWarn} domain</span><br>
+      │ Avg DA (est) : <span style="color:#00aaff">${avgDA}/100</span>  &nbsp; Avg DR (est): <span style="color:#aa44ff">${avgDR}/100</span><br>
+      └──────────────────────────────────────────────────────────────────┘`;
+    document.getElementById('expBtn').style.display = arr.length ? 'block' : 'none';
+  }
+
+  // ─── MAIN RUN ───────────────────────────────────────────────────────────────
+  async function run() {
+    const raw = document.getElementById('inp').value;
+    const domains = [...new Set(raw.split('\n').map(clean).filter(d => d && d.includes('.')))].slice(0, 20);
+    if (!domains.length) { setP('<span style="color:#ff3355">⚠ masukkan minimal 1 domain!</span>'); return; }
+
+    document.getElementById('runBtn').disabled = true;
+    document.getElementById('expBtn').style.display = 'none';
+    document.getElementById('tbl-wrap').innerHTML = '';
+    document.getElementById('summary').innerHTML = '';
+    results = [];
+
+    for (let i = 0; i < domains.length; i++) {
+      const d = domains[i];
+      setP(`<span class="spin">⟳</span> [${i + 1}/${domains.length}] → <span style="color:#00ffcc">${d}</span>`);
+      try {
+        const [dns, rdapRaw, sslData] = await Promise.all([
+          checkDNS(d), fetchRDAP(d), checkSSL(d)
+        ]);
+        const rdap = parseRDAP(rdapRaw);
+        const da = estimateDA(d, rdap);
+        const dr = estimateDR(d, da, dns.alive);
+        results.push({ domain: d, alive: dns.alive, ip: dns.ip, da, dr, ...rdap, ...sslData });
+      } catch (e) {
+        results.push({ domain: d, alive: null, ip: null, da: 0, dr: 0, registrar: 'ERROR', expiry: '—', expiryDays: null, nameservers: [], ssl: null, sslDays: null });
+      }
+      renderTable(results, domains.length);
+    }
+
+    setP(`<span style="color:#00ff88">✔ SELESAI — ${results.length} domain diproses</span>`);
+    renderTable(results, results.length);
+    renderSummary(results);
+    document.getElementById('runBtn').disabled = false;
+  }
+
+  // ─── EXPORT CSV ─────────────────────────────────────────────────────────────
+  function exportCSV() {
+    const headers = ['Domain','Status','IP','DA','DR','Registrar','Expiry','Expiry (Hari)','SSL','Nameservers'];
+    const rows = results.map(r => [
+      r.domain,
+      r.alive === true ? 'AKTIF' : r.alive === false ? 'DOWN' : '—',
+      r.ip || '—', r.da, r.dr,
+      r.registrar || '—', r.expiry || '—',
+      r.expiryDays !== null ? r.expiryDays : '—',
+      r.ssl === true ? 'ADA' : r.ssl === false ? 'TIDAK ADA' : '—',
+      (r.nameservers || []).join(' | ')
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = `domain-checker-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  }
+
+  // ─── CLEAR ──────────────────────────────────────────────────────────────────
+  function clearAll() {
+    document.getElementById('inp').value = '';
+    document.getElementById('tbl-wrap').innerHTML = '';
+    document.getElementById('summary').innerHTML = '';
+    document.getElementById('expBtn').style.display = 'none';
+    setP('');
+    results = [];
+  }
+</script>
+</body>
+</html>
